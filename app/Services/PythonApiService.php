@@ -150,7 +150,7 @@ class PythonApiService
         // --- Email patrol unit users ---
         $patrolUsers = User::where('role', 'patrol_unit')->where('is_active', true)->get();
         $mailableClass = NewAlertNotification::class;
-        $subject = "FRMS Alert: Potential Match — {$missingPerson->case_number}";
+        $subject = "FindSight Alert: Potential Match — {$missingPerson->case_number}";
 
         foreach ($patrolUsers as $patrolUser) {
             try {

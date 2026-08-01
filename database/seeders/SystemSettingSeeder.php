@@ -10,9 +10,9 @@ class SystemSettingSeeder extends Seeder
     public function run(): void
     {
         $settings = [
-            ['key' => 'system.name', 'value' => 'Real-Time Facial Recognition-Based Monitoring and Alert System', 'type' => 'string', 'description' => 'Full system name'],
-            ['key' => 'system.short_name', 'value' => 'FRMS', 'type' => 'string', 'description' => 'Short system name'],
-            ['key' => 'system.version', 'value' => '1.0.0-prototype', 'type' => 'string', 'description' => 'System version'],
+            ['key' => 'system.name', 'value' => 'FindSight', 'type' => 'string', 'description' => 'Full system name'],
+            ['key' => 'system.short_name', 'value' => 'FindSight', 'type' => 'string', 'description' => 'Short system name'],
+            ['key' => 'system.version', 'value' => '1.0.0', 'type' => 'string', 'description' => 'System version'],
             ['key' => 'detection.similarity_threshold', 'value' => '80', 'type' => 'integer', 'description' => 'Minimum similarity score to generate alert'],
             ['key' => 'alert.auto_escalate_hours', 'value' => '24', 'type' => 'integer', 'description' => 'Hours before auto-escalation of un-reviewed alerts'],
             ['key' => 'facial_recognition.disclaimer', 'value' => 'Facial recognition results are NOT final identification. Similarity scores indicate potential matches only. All identity confirmations require human review and JPN verification.', 'type' => 'string', 'description' => 'Disclaimer shown on detection pages'],

@@ -1,7 +1,7 @@
-# FRMS Demo Credentials
+# FindSight Demo Credentials
 
-**Real-Time Facial Recognition-Based Monitoring and Alert System**  
-Southern University College — FYP Prototype
+**FindSight — Monitoring and Alert System**  
+Southern University College — FYP
 
 ---
 
@@ -114,7 +114,7 @@ The `php artisan migrate:fresh --seed` command populates the database with:
 - **40 verification requests** — identity verification workflow
 - Notifications and audit logs
 
-All facial recognition data is **mock/simulated** — this is a prototype system.
+All facial recognition data is **mock/simulated** for demonstration purposes.
 
 ---
 

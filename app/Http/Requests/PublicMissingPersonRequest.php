@@ -8,7 +8,7 @@ class PublicMissingPersonRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->check();
+        return true;
     }
 
     public function rules(): array
@@ -21,7 +21,8 @@ class PublicMissingPersonRequest extends FormRequest
             'last_seen_location' => ['required', 'string', 'max:255'],
             'last_seen_date' => ['required', 'date', 'before_or_equal:today'],
             'description' => ['nullable', 'string', 'max:5000'],
-            'photo' => ['required', 'image', 'mimes:jpg,jpeg,png', 'max:5120'],
+            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:5120'],
+            'website' => ['nullable', 'string', 'max:0', 'prohibited'],
         ];
     }
 
@@ -35,10 +36,10 @@ class PublicMissingPersonRequest extends FormRequest
             'last_seen_date.required' => 'Please provide the last seen date.',
             'last_seen_date.before_or_equal' => 'The last seen date cannot be in the future.',
             'date_of_birth.before' => 'The date of birth must be before today.',
-            'photo.required' => 'Please upload a photo of the missing person.',
             'photo.image' => 'The file must be an image.',
             'photo.mimes' => 'The photo must be a JPG or PNG file.',
             'photo.max' => 'The photo must not exceed 5MB.',
+            'website.prohibited' => 'Automated submissions are not allowed.',
         ];
     }
-}
+};

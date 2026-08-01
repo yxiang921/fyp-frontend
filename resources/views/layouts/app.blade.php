@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Real-Time Facial Recognition-Based Monitoring and Alert System">
-    <title>@yield('title', 'FRMS') — Facial Recognition Monitoring System</title>
+    <meta name="description" content="FindSight — Monitoring and Alert System">
+    <title>@yield('title', 'FindSight')</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -28,7 +28,7 @@
                     <i class="fa-solid fa-shield-halved text-white text-sm"></i>
                 </div>
                 <div class="min-w-0">
-                    <p class="text-xs font-semibold leading-tight">FRMS</p>
+                    <p class="text-xs font-semibold leading-tight">FindSight</p>
                     <p class="text-[10px] text-gray-400 leading-tight">Monitoring & Alert System</p>
                 </div>
             </div>
@@ -267,8 +267,7 @@
             </div>
 
             <footer class="px-4 lg:px-6 py-4 text-center text-xs text-gray-400 border-t border-gray-200 mt-8">
-                <p>&copy; {{ date('Y') }} Real-Time Facial Recognition-Based Monitoring and Alert System (FRMS).</p>
-                <p class="mt-1">This is a prototype system. Facial recognition results are simulated and are not final identification. All identity confirmations require human review and verification.</p>
+                <p>&copy; {{ date('Y') }} FindSight.</p>
             </footer>
         </main>
     </div>

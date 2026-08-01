@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FRMS Alert Dispatch</title>
+    <title>FindSight Alert Dispatch</title>
 </head>
 <body style="font-family: 'Segoe UI', Arial, sans-serif; background: #f3f4f6; margin: 0; padding: 24px;">
     <div style="max-width: 540px; margin: 0 auto; background: #fff; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb;">
@@ -11,10 +11,10 @@
         {{-- Header --}}
         <div style="background: #1e3a5f; padding: 24px; text-align: center;">
             <h1 style="color: #fff; margin: 0; font-size: 18px; font-weight: 600;">
-                &#128680; FRMS Alert Dispatch
+                &#128680; FindSight Alert Dispatch
             </h1>
             <p style="color: #93a3b8; margin: 4px 0 0; font-size: 12px;">
-                Facial Recognition Monitoring System
+                FindSight
             </p>
         </div>
 
@@ -98,14 +98,14 @@
             @endif
 
             <p style="margin: 20px 0 0; font-size: 12px; color: #6b7280;">
-                This is a manually dispatched alert from the Facial Recognition Monitoring System (FRMS). Please do not reply to this email. Log in to the system to review and take action on this alert.
+                This is a manually dispatched alert from FindSight. Please do not reply to this email. Log in to the system to review and take action on this alert.
             </p>
         </div>
 
         {{-- Footer --}}
         <div style="background: #f9fafb; padding: 16px 24px; border-top: 1px solid #e5e7eb; text-align: center;">
             <p style="margin: 0; font-size: 11px; color: #9ca3af;">
-                &copy; {{ date('Y') }} FRMS &mdash; Facial Recognition Monitoring System
+                &copy; {{ date('Y') }} FindSight
             </p>
         </div>
     </div>

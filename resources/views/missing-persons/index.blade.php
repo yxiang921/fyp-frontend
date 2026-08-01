@@ -43,6 +43,11 @@
         <option value="male" {{ request('gender') == 'male' ? 'selected' : '' }}>Male</option>
         <option value="female" {{ request('gender') == 'female' ? 'selected' : '' }}>Female</option>
     </select>
+    <select name="source" class="form-select w-auto" onchange="this.form.submit()">
+        <option value="">All Sources</option>
+        <option value="officer" {{ request('source') == 'officer' ? 'selected' : '' }}>Officer Created</option>
+        <option value="public" {{ request('source') == 'public' ? 'selected' : '' }}>Public Submission</option>
+    </select>
     <button type="submit" class="btn btn-secondary">
         <i class="fa-solid fa-magnifying-glass"></i> Filter
     </button>
@@ -59,6 +64,7 @@
                 <th>Last Seen</th>
                 <th>Status</th>
                 <th>Date Filed</th>
+                <th>Source</th>
                 <th class="text-right">Actions</th>
             </tr>
         </thead>
@@ -80,6 +86,13 @@
                 <td class="text-gray-500 text-sm">{{ $mp->last_seen_location }}</td>
                 <td><span class="badge {{ $mp->status->badge() }}">{{ $mp->status->label() }}</span></td>
                 <td class="text-gray-500 text-xs">{{ $mp->created_at->format('d M Y') }}</td>
+                <td>
+                    @if(is_null($mp->created_by))
+                        <span class="badge badge-gray text-xs">Public</span>
+                    @else
+                        <span class="text-xs text-gray-400">Officer</span>
+                    @endif
+                </td>
                 <td class="text-right">
                     <div class="flex items-center justify-end gap-1">
                         <a href="{{ route('missing-persons.show', $mp) }}" class="btn btn-sm btn-secondary" title="View"><i class="fa-solid fa-eye"></i></a>
@@ -96,7 +109,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="8" class="text-center text-gray-400 py-8">
+                <td colspan="9" class="text-center text-gray-400 py-8">
                     <i class="fa-solid fa-folder-open text-2xl mb-2 block"></i>
                     No missing person records found.
                 </td>

@@ -14,12 +14,18 @@ class PublicSubmissionController extends Controller
 {
     public function create()
     {
-        return view('public.report-missing');
+        if (auth()->check()) {
+            return view('public.report-missing');
+        }
+        return view('public.report-missing-guest');
     }
 
     public function store(PublicMissingPersonRequest $request)
     {
         $data = $request->validated();
+
+        // Remove honeypot field from data
+        unset($data['website']);
 
         // Auto-generate case number
         $latest = MissingPerson::where('case_number', 'like', 'MP-' . date('Y') . '-%')
@@ -35,7 +41,7 @@ class PublicSubmissionController extends Controller
 
         $data['case_number'] = $caseNumber;
         $data['status'] = MissingPersonStatus::Pending->value;
-        $data['created_by'] = auth()->id();
+        $data['created_by'] = auth()->check() ? auth()->id() : null;
 
         $missingPerson = MissingPerson::create($data);
 
@@ -43,8 +49,10 @@ class PublicSubmissionController extends Controller
         MissingPersonTimeline::create([
             'missing_person_id' => $missingPerson->id,
             'event_type' => 'submitted',
-            'description' => 'Case submitted by public user. Awaiting PDRM officer verification.',
-            'recorded_by' => auth()->id(),
+            'description' => auth()->check()
+                ? 'Case submitted by public user. Awaiting PDRM officer verification.'
+                : 'Case submitted by anonymous public user via online form. Awaiting PDRM officer verification.',
+            'recorded_by' => auth()->check() ? auth()->id() : null,
         ]);
 
         // Handle photo upload
@@ -54,16 +62,35 @@ class PublicSubmissionController extends Controller
                 'path' => $path,
                 'type' => 'front',
                 'is_primary' => true,
-                'uploaded_by' => auth()->id(),
+                'uploaded_by' => auth()->check() ? auth()->id() : null,
             ]);
         }
 
         // Sync to Python API server (fire-and-forget)
         PythonApiService::syncMissingPerson($missingPerson);
 
+        // Redirect based on auth status
+        if (auth()->check()) {
+            return redirect()
+                ->route('public.case.show', $missingPerson)
+                ->with('success', 'Your missing person report has been submitted. A PDRM officer will verify your case shortly.');
+        }
+
         return redirect()
-            ->route('public.case.show', $missingPerson)
-            ->with('success', 'Your missing person report has been submitted. A PDRM officer will verify your case shortly.');
+            ->route('public.submitted', $missingPerson->case_number)
+            ->with('submitted_case_number', $missingPerson->case_number);
+    }
+
+    public function submitted(string $caseNumber)
+    {
+        $exists = MissingPerson::where('case_number', $caseNumber)->exists();
+        if (!$exists) {
+            abort(404);
+        }
+
+        return view('public.report-submitted', [
+            'caseNumber' => session('submitted_case_number', $caseNumber),
+        ]);
     }
 
     public function myCases()
@@ -77,7 +104,7 @@ class PublicSubmissionController extends Controller
 
     public function showCase(MissingPerson $missingPerson)
     {
-        // Authorization: only the submitter can view
+        // Authorization: only the submitter or super admin can view
         if ($missingPerson->created_by !== auth()->id() && !auth()->user()->isSuperAdmin()) {
             abort(403, 'You are not authorized to view this case.');
         }

@@ -35,6 +35,13 @@ class MissingPersonController extends Controller
             $query->where('gender', $request->input('gender'));
         }
 
+        // Filter by source (public vs officer)
+        if ($request->input('source') === 'public') {
+            $query->whereNull('created_by');
+        } elseif ($request->input('source') === 'officer') {
+            $query->whereNotNull('created_by');
+        }
+
         $missingPersons = $query->latest()->paginate(15)->withQueryString();
 
         return view('missing-persons.index', compact('missingPersons'));

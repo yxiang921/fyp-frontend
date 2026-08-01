@@ -30,6 +30,17 @@ Route::post('/logout', [LoginController::class, 'logout'])
     ->middleware('auth')
     ->name('logout');
 
+// Public Missing Person Submission (no authentication required)
+Route::prefix('report-missing')->name('public.')->group(function () {
+    Route::get('/', [PublicSubmissionController::class, 'create'])->name('report-missing');
+    Route::post('/', [PublicSubmissionController::class, 'store'])
+        ->middleware('throttle:5,60')
+        ->name('report-missing.store');
+    Route::get('/submitted/{caseNumber}', [PublicSubmissionController::class, 'submitted'])
+        ->where('caseNumber', 'MP-\d{4}-\d{4}')
+        ->name('submitted');
+});
+
 // Authenticated Routes
 Route::middleware('auth')->group(function () {
     // Dashboard
@@ -165,12 +176,6 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:super_admin,pdrm_officer')->prefix('email-logs')->name('email-logs.')->group(function () {
         Route::get('/', [EmailLogController::class, 'index'])->name('index');
         Route::get('/{emailLog}', [EmailLogController::class, 'show'])->name('show');
-    });
-
-    // Public Submission — accessible by any authenticated user
-    Route::prefix('report-missing')->name('public.')->group(function () {
-        Route::get('/', [PublicSubmissionController::class, 'create'])->name('report-missing');
-        Route::post('/', [PublicSubmissionController::class, 'store'])->name('report-missing.store');
     });
 
     // My Cases — public users only

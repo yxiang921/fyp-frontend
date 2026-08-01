@@ -26,7 +26,7 @@ class NewAlertNotification extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: "FRMS Alert: Potential Match — {$this->missingPerson->case_number}",
+            subject: "FindSight Alert: Potential Match — {$this->missingPerson->case_number}",
         );
     }
 

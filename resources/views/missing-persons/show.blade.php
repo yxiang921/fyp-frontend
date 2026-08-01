@@ -74,8 +74,16 @@
                     </div>
                     <div class="detail-item"><span class="detail-label">Last Seen Location</span><span class="detail-value">{{ $missingPerson->last_seen_location }}</span></div>
                     <div class="detail-item"><span class="detail-label">Date Filed</span><span class="detail-value">{{ $missingPerson->created_at->format('d M Y, H:i') }}</span></div>
-                    <div class="detail-item"><span class="detail-label">Filed By</span><span class="detail-value">{{ $missingPerson->creator?->name ?? 'Unknown' }}</span></div>
-                    <div class="detail-item"><span class="detail-label">Created By Role</span><span class="detail-value">{{ $missingPerson->creator?->role?->label() ?? 'N/A' }}</span></div>
+                    <div class="detail-item">
+                        <span class="detail-label">Filed By</span>
+                        <span class="detail-value">
+                            @if($missingPerson->created_by)
+                                {{ $missingPerson->creator->name }} ({{ $missingPerson->creator->role->label() }})
+                            @else
+                                <span class="badge badge-gray text-xs">Public (Anonymous)</span>
+                            @endif
+                        </span>
+                    </div>
                 </div>
 
                 @if($missingPerson->description)

@@ -28,7 +28,7 @@ class PatrolAlertNotification extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: "FRMS Alert Dispatch — {$this->missingPerson->case_number} — {$this->alert->alert_id}",
+            subject: "FindSight Alert Dispatch — {$this->missingPerson->case_number} — {$this->alert->alert_id}",
         );
     }
 

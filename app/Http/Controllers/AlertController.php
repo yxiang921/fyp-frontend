@@ -75,7 +75,7 @@ class AlertController extends Controller
 
         $sentCount = 0;
         $mailableClass = PatrolAlertNotification::class;
-        $subject = "FRMS Alert Dispatch — {$alert->reference->case_number} — {$alert->alert_id}";
+        $subject = "FindSight Alert Dispatch — {$alert->reference->case_number} — {$alert->alert_id}";
         
         foreach ($patrolUsers as $patrolUser) {
             try {
