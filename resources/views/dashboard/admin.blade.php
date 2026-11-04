@@ -121,7 +121,6 @@
                     <tr>
                         <th>ID</th>
                         <th>Type</th>
-                        <th>Priority</th>
                         <th>Status</th>
                         <th>Time</th>
                     </tr>
@@ -134,13 +133,11 @@
                                 {{ $alert->alert_id }}
                             </a>
                         </td>
-                        <td><span class="text-xs">{{ ucfirst($alert->alert_type) }}</span></td>
-                        <td><span class="badge {{ $alert->priority->badge() }}">{{ $alert->priority->label() }}</span></td>
                         <td><span class="badge {{ $alert->status->badge() }}">{{ $alert->status->label() }}</span></td>
                         <td class="text-gray-500 text-xs">{{ $alert->created_at->diffForHumans() }}</td>
                     </tr>
                     @empty
-                    <tr><td colspan="5" class="text-center text-gray-400 py-6">No alerts recorded</td></tr>
+                    <tr><td colspan="4" class="text-center text-gray-400 py-6">No alerts recorded</td></tr>
                     @endforelse
                 </tbody>
             </table>

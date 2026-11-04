@@ -6,7 +6,6 @@ use App\Enums\DetectionStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Detection extends Model
 {
@@ -14,8 +13,7 @@ class Detection extends Model
         'detection_id',
         'camera_id',
         'captured_image',
-        'reference_type',
-        'reference_id',
+        'missing_person_id',
         'similarity_score',
         'status',
         'detected_at',
@@ -29,7 +27,19 @@ class Detection extends Model
             'similarity_score' => 'decimal:2',
             'status' => DetectionStatus::class,
             'detected_at' => 'datetime',
+            'reviewed_at' => 'datetime',
+            'confirmed_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (Detection $detection) {
+            if ($detection->isDirty('status') && $detection->status !== DetectionStatus::New) {
+                $detection->reviewed_at ??= now();
+                if ($detection->status === DetectionStatus::Confirmed) $detection->confirmed_at ??= now();
+            }
+        });
     }
 
     public function camera(): BelongsTo
@@ -37,9 +47,9 @@ class Detection extends Model
         return $this->belongsTo(Camera::class);
     }
 
-    public function reference(): MorphTo
+    public function missingPerson(): BelongsTo
     {
-        return $this->morphTo();
+        return $this->belongsTo(MissingPerson::class);
     }
 
     public function reviewedBy(): BelongsTo
@@ -88,7 +98,7 @@ class Detection extends Model
     // Helpers
     public function referenceName(): string
     {
-        return $this->reference?->full_name ?? 'Unknown';
+        return $this->missingPerson?->full_name ?? 'Unknown';
     }
 
     public function isHighConfidence(): bool

@@ -12,9 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('alert_id', 50)->unique();
             $table->foreignId('detection_id')->nullable()->constrained('detections')->onDelete('set null');
-            $table->string('alert_type'); // 'missing_person' or 'poi'
-            $table->string('reference_type');
-            $table->unsignedBigInteger('reference_id');
+            $table->foreignId('missing_person_id')->constrained('missing_persons')->onDelete('cascade');
             $table->decimal('similarity_score', 5, 2)->default(0);
             $table->foreignId('camera_id')->constrained('cameras')->onDelete('cascade');
             $table->string('status')->default('new');
@@ -26,8 +24,7 @@ return new class extends Migration
 
             $table->index('status');
             $table->index('priority');
-            $table->index('alert_type');
-            $table->index(['reference_type', 'reference_id']);
+            $table->index('missing_person_id');
             $table->index('alert_id');
         });
 

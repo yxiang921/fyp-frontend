@@ -25,19 +25,10 @@ return new class extends Migration
             $table->index('request_id');
         });
 
-        Schema::create('verification_documents', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('verification_request_id')->constrained('verification_requests')->onDelete('cascade');
-            $table->string('type');
-            $table->string('path');
-            $table->foreignId('uploaded_by')->constrained('users')->onDelete('cascade');
-            $table->timestamps();
-        });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('verification_documents');
         Schema::dropIfExists('verification_requests');
     }
 };

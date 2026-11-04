@@ -36,6 +36,11 @@ class MissingPersonPhoto extends Model
 
     public function url(): string
     {
+        // Cloudinary URL (starts with https://)
+        if (str_starts_with($this->path, 'https://')) {
+            return $this->path;
+        }
+        // Legacy local storage path
         return asset('storage/' . $this->path);
     }
 }

@@ -11,7 +11,7 @@ class DetectionController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Detection::with(['camera', 'reference']);
+        $query = Detection::with(['camera', 'missingPerson']);
 
         if ($request->filled('search')) {
             $query->search($request->input('search'));
@@ -37,7 +37,7 @@ class DetectionController extends Controller
 
     public function show(Detection $detection)
     {
-        $detection->load(['camera', 'reference', 'reviewedBy', 'alerts', 'verificationRequests']);
+        $detection->load(['camera', 'missingPerson', 'reviewedBy', 'alerts', 'verificationRequests']);
 
         return view('detections.show', compact('detection'));
     }

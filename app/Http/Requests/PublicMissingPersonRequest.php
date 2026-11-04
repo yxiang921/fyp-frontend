@@ -14,6 +14,10 @@ class PublicMissingPersonRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'consent' => ['accepted'],
+            'duplicate_acknowledged' => ['nullable', 'boolean'],
+            'last_seen_latitude' => ['nullable', 'required_with:last_seen_longitude', 'numeric', 'between:-90,90'],
+            'last_seen_longitude' => ['nullable', 'required_with:last_seen_latitude', 'numeric', 'between:-180,180'],
             'full_name' => ['required', 'string', 'max:255'],
             'gender' => ['required', 'string', 'in:male,female'],
             'date_of_birth' => ['nullable', 'date', 'before:today'],
@@ -28,6 +32,7 @@ class PublicMissingPersonRequest extends FormRequest
 
     public function messages(): array
     {
+        if (app()->getLocale() !== 'en') return [];
         return [
             'full_name.required' => 'Please provide the full name of the missing person.',
             'gender.required' => 'Please select a gender.',

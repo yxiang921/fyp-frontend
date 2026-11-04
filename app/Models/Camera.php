@@ -13,6 +13,7 @@ class Camera extends Model
         'camera_id',
         'name',
         'location',
+        'patrol_area_id',
         'ip_address',
         'port',
         'stream_url',
@@ -43,6 +44,11 @@ class Camera extends Model
     public function registeredBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'registered_by');
+    }
+
+    public function patrolArea(): BelongsTo
+    {
+        return $this->belongsTo(PatrolArea::class);
     }
 
     public function detections(): HasMany

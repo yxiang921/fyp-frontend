@@ -18,32 +18,61 @@
             <h2 class="text-sm font-semibold text-gray-900">Profile Information</h2>
         </div>
         <div class="card-body">
-            <div class="flex items-center gap-4 mb-6">
-                <img src="{{ auth()->user()->avatarUrl() }}" alt="" class="w-16 h-16 rounded-full">
-                <div>
-                    <p class="text-lg font-semibold text-gray-900">{{ auth()->user()->name }}</p>
-                    <p class="text-sm text-gray-500">{{ auth()->user()->role->label() }}</p>
-                </div>
-            </div>
+            <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data">
+                @csrf
+                @method('PUT')
 
-            <div class="detail-grid">
-                <div class="detail-item">
-                    <span class="detail-label">Email</span>
-                    <span class="detail-value">{{ auth()->user()->email }}</span>
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="relative group">
+                        <img src="{{ auth()->user()->avatarUrl() }}" alt="" id="avatar-preview" class="w-20 h-20 rounded-full object-cover border-2 border-gray-200">
+                        <label for="avatar" class="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
+                            <i class="fa-solid fa-camera text-white text-lg"></i>
+                        </label>
+                        <input type="file" id="avatar" name="avatar" class="hidden" accept="image/jpeg,image/png,image/jpg,image/webp" onchange="previewImage(this, 'avatar-preview')">
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Click the avatar to upload a new photo.<br>Supported: JPG, PNG, WebP. Max 5MB.</p>
+                        @error('avatar')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
                 </div>
-                <div class="detail-item">
-                    <span class="detail-label">Phone</span>
-                    <span class="detail-value">{{ auth()->user()->phone ?? '—' }}</span>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label for="name" class="form-label">Name <span class="text-red-500">*</span></label>
+                        <input type="text" id="name" name="name" class="form-input @error('name') border-red-500 @enderror" value="{{ old('name', auth()->user()->name) }}" required>
+                        @error('name')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input bg-gray-50" value="{{ auth()->user()->email }}" readonly>
+                        <p class="text-xs text-gray-400 mt-1">Email cannot be changed</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone" class="form-label">Phone</label>
+                        <input type="text" id="phone" name="phone" class="form-input @error('phone') border-red-500 @enderror" value="{{ old('phone', auth()->user()->phone) }}">
+                        @error('phone')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="form-group">
+                        <label for="agency" class="form-label">Agency</label>
+                        <input type="text" id="agency" name="agency" class="form-input @error('agency') border-red-500 @enderror" value="{{ old('agency', auth()->user()->agency) }}">
+                        @error('agency')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Role</label>
+                        <input type="text" class="form-input bg-gray-50" value="{{ auth()->user()->role->label() }}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Member Since</label>
+                        <input type="text" class="form-input bg-gray-50" value="{{ auth()->user()->created_at->format('d M Y') }}" readonly>
+                    </div>
                 </div>
-                <div class="detail-item">
-                    <span class="detail-label">Agency</span>
-                    <span class="detail-value">{{ auth()->user()->agency ?? '—' }}</span>
+
+                <div class="mt-5 pt-5 border-t border-gray-200">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa-solid fa-save"></i> Save Changes
+                    </button>
                 </div>
-                <div class="detail-item">
-                    <span class="detail-label">Member Since</span>
-                    <span class="detail-value">{{ auth()->user()->created_at->format('d M Y') }}</span>
-                </div>
-            </div>
+            </form>
         </div>
     </div>
 

@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Enums\CameraStatus;
 use App\Models\Camera;
+use App\Models\PatrolArea;
 use Illuminate\Http\Request;
+use App\Services\CameraRecognitionService;
 
 class CameraController extends Controller
 {
@@ -38,7 +40,8 @@ class CameraController extends Controller
             $cameraId = 'CAM-001';
         }
 
-        return view('cameras.create', compact('cameraId'));
+        $patrolAreas = PatrolArea::where('is_active', true)->orderBy('name')->get();
+        return view('cameras.create', compact('cameraId', 'patrolAreas'));
     }
 
     public function store(Request $request)
@@ -47,6 +50,7 @@ class CameraController extends Controller
             'camera_id' => ['required', 'string', 'max:50', 'unique:cameras,camera_id'],
             'name' => ['required', 'string', 'max:255'],
             'location' => ['required', 'string', 'max:255'],
+            'patrol_area_id' => ['required', 'integer', 'exists:patrol_areas,id'],
             'ip_address' => ['nullable', 'string', 'max:45'],
             'port' => ['nullable', 'integer', 'min:1', 'max:65535'],
             'stream_url' => ['nullable', 'string', 'max:500'],
@@ -68,18 +72,21 @@ class CameraController extends Controller
             ->with('success', 'Camera ' . $validated['camera_id'] . ' registered successfully.');
     }
 
-    public function show(Camera $camera)
+    public function show(Camera $camera, CameraRecognitionService $recognition)
     {
         $camera->load(['detections' => function ($q) {
             $q->latest()->take(10);
         }, 'registeredBy']);
 
-        return view('cameras.show', compact('camera'));
+        $recognitionStatus = null;
+        try { $recognitionStatus = $recognition->status($camera); } catch (\Throwable) {}
+        return view('cameras.show', compact('camera', 'recognitionStatus'));
     }
 
     public function edit(Camera $camera)
     {
-        return view('cameras.edit', compact('camera'));
+        $patrolAreas = PatrolArea::where('is_active', true)->orderBy('name')->get();
+        return view('cameras.edit', compact('camera', 'patrolAreas'));
     }
 
     public function update(Request $request, Camera $camera)
@@ -87,6 +94,7 @@ class CameraController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'location' => ['required', 'string', 'max:255'],
+            'patrol_area_id' => ['required', 'integer', 'exists:patrol_areas,id'],
             'ip_address' => ['nullable', 'string', 'max:45'],
             'port' => ['nullable', 'integer', 'min:1', 'max:65535'],
             'stream_url' => ['nullable', 'string', 'max:500'],
@@ -120,10 +128,23 @@ class CameraController extends Controller
             ->with('success', 'Camera ' . $cameraId . ' deleted successfully.');
     }
 
-    public function live(Camera $camera)
+    public function live(Camera $camera, CameraRecognitionService $recognition)
     {
         $streamUrl = $camera->getPythonVideoFeedUrl();
+        $recognitionStatus = null;
+        try { $recognitionStatus = $recognition->status($camera); } catch (\Throwable) {}
 
-        return view('cameras.live', compact('camera', 'streamUrl'));
+        return view('cameras.live', compact('camera', 'streamUrl', 'recognitionStatus'));
+    }
+
+    public function recognition(Request $request, Camera $camera, CameraRecognitionService $recognition)
+    {
+        $validated = $request->validate(['action' => ['required', 'in:start,stop']]);
+        try {
+            $result = $recognition->control($camera, $validated['action']);
+            return back()->with('success', "Recognition {$result['status']} for {$camera->name}.");
+        } catch (\Throwable $error) {
+            return back()->with('error', $error->getMessage());
+        }
     }
 }

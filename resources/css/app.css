@@ -22,15 +22,24 @@ body {
 
 /* Sidebar */
 .sidebar {
-    @apply bg-navy text-white w-64 min-h-screen fixed left-0 top-0 z-30 transition-transform duration-200;
+    @apply bg-navy text-white w-64 h-screen fixed left-0 top-0 z-30 transition-transform duration-200 flex flex-col;
 }
 
 .sidebar-brand {
-    @apply flex items-center gap-3 px-5 py-4 border-b border-white/10;
+    @apply flex items-center gap-3 px-5 py-4 border-b border-white/10 flex-shrink-0;
 }
 
 .sidebar-nav {
-    @apply py-3 px-3 space-y-0.5;
+    @apply py-3 px-3 space-y-0.5 flex-1 overflow-y-auto;
+    scrollbar-width: none;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+    display: none;
+}
+
+.sidebar-footer {
+    @apply p-4 border-t border-white/10 flex-shrink-0;
 }
 
 .sidebar-link {
@@ -56,7 +65,7 @@ body {
 
 /* Main content */
 .main-content {
-    @apply pt-16 lg:pl-64 min-h-screen;
+    @apply pt-16 min-h-screen overflow-x-hidden;
 }
 
 .page-content {
@@ -351,4 +360,86 @@ table.data-table tbody tr:last-child {
 /* Sidebar mobile overlay */
 .sidebar-overlay {
     @apply fixed inset-0 bg-black/50 z-25 lg:hidden;
+}
+
+/* Image carousel */
+.image-carousel {
+    @apply relative overflow-hidden;
+}
+
+.image-carousel .carousel-btn {
+    @apply absolute top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 border border-gray-300 flex items-center justify-center text-gray-700 hover:bg-white hover:text-navy shadow-sm transition-all z-10;
+}
+
+.image-carousel .carousel-btn.prev {
+    @apply left-2;
+}
+
+.image-carousel .carousel-btn.next {
+    @apply right-2;
+}
+
+.image-carousel .carousel-dots {
+    @apply flex items-center justify-center gap-1.5 mt-2;
+}
+
+.image-carousel .carousel-dots .dot {
+    @apply w-2 h-2 rounded-full bg-gray-300 cursor-pointer transition-colors;
+}
+
+.image-carousel .carousel-dots .dot.active {
+    @apply bg-navy w-2.5 h-2.5;
+}
+
+/* Map container */
+.map-container {
+    @apply w-full rounded border border-gray-200;
+    min-height: 260px;
+}
+
+.map-container.large {
+    min-height: 360px;
+}
+
+/* Leaflet overrides for theme consistency */
+.leaflet-popup-content {
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif !important;
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+}
+
+.leaflet-popup-content strong {
+    color: #1B3A5C;
+}
+
+/* Notification page — filter tab pills */
+.tab-pill {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900 transition-colors;
+}
+
+.tab-pill-active {
+    @apply bg-navy text-white border-navy;
+}
+
+.tab-pill-active .tab-badge {
+    @apply bg-white/20 text-white;
+}
+
+/* Notification page — tab badge */
+.tab-badge {
+    @apply inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-600;
+}
+
+/* Notification page — row hover transition */
+.notification-row {
+    transition: background-color 0.15s ease;
+}
+
+/* Spinner animation for polling indicator */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
 }

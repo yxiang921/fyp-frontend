@@ -21,6 +21,17 @@
                 <a href="{{ route('users.edit', $user) }}" class="btn btn-secondary">
                     <i class="fa-solid fa-pen-to-square"></i> Edit
                 </a>
+                @if($user->id !== auth()->id())
+                <form action="{{ route('users.destroy', $user) }}" method="POST"
+                      onsubmit="return confirm('Are you sure you want to delete this user? This action cannot be undone.')"
+                      class="inline">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fa-solid fa-trash"></i> Delete
+                    </button>
+                </form>
+                @endif
             </div>
         </div>
 
@@ -41,6 +52,7 @@
                     <div class="detail-item"><span class="detail-label">Email</span><span class="detail-value">{{ $user->email }}</span></div>
                     <div class="detail-item"><span class="detail-label">Phone</span><span class="detail-value">{{ $user->phone ?? '—' }}</span></div>
                     <div class="detail-item"><span class="detail-label">Agency</span><span class="detail-value">{{ $user->agency ?? '—' }}</span></div>
+                    <div class="detail-item"><span class="detail-label">Patrol Areas</span><span class="detail-value">{{ $user->patrolAreas()->pluck('name')->join(', ') ?: '—' }}</span></div>
                     <div class="detail-item"><span class="detail-label">Status</span><span class="detail-value"><span class="badge {{ $user->is_active ? 'badge-green' : 'badge-red' }}">{{ $user->is_active ? 'Active' : 'Inactive' }}</span></span></div>
                     <div class="detail-item"><span class="detail-label">Created</span><span class="detail-value">{{ $user->created_at->format('d M Y, h:i A') }}</span></div>
                     <div class="detail-item"><span class="detail-label">Last Updated</span><span class="detail-value">{{ $user->updated_at->format('d M Y, h:i A') }}</span></div>

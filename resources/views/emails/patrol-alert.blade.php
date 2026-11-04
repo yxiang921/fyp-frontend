@@ -40,22 +40,11 @@
                 </tr>
                 <tr>
                     <td style="padding: 8px 12px; background: #f9fafb; font-weight: 600; border-bottom: 1px solid #e5e7eb;">Similarity Score</td>
-                    <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: {{ $alert->isHighPriority() ? '#dc2626' : '#16a34a' }};">
+                    <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #16a34a;">
                         {{ $alert->similarity_score }}%
                     </td>
                 </tr>
-                <tr>
-                    <td style="padding: 8px 12px; background: #f9fafb; font-weight: 600; border-bottom: 1px solid #e5e7eb;">Priority</td>
-                    <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">
-                        <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;
-                            @if($alert->priority->value === 'critical') background: #fecaca; color: #991b1b;
-                            @elseif($alert->priority->value === 'high') background: #fed7aa; color: #9a3412;
-                            @elseif($alert->priority->value === 'medium') background: #dbeafe; color: #1e40af;
-                            @else background: #d1fae5; color: #065f46;
-                            @endif
-                        ">{{ $alert->priority->label() }}</span>
-                    </td>
-                </tr>
+
                 <tr>
                     <td style="padding: 8px 12px; background: #f9fafb; font-weight: 600; border-bottom: 1px solid #e5e7eb;">Status</td>
                     <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">{{ $alert->status->label() }}</td>

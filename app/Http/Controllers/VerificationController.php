@@ -67,6 +67,12 @@ class VerificationController extends Controller
             'reviewed_by' => auth()->id(),
             'verified_at' => now(),
         ]);
+        $verification->detection?->update([
+            'status' => match ($validated['decision']) {
+                'confirmed' => 'confirmed', 'rejected' => 'rejected', default => 'reviewed',
+            },
+            'reviewed_by' => auth()->id(),
+        ]);
 
         // --- Audit log ---
         $decisionLabel = match ($validated['decision']) {
@@ -87,7 +93,7 @@ class VerificationController extends Controller
         // --- If confirmed: create alert + notify ---
         if ($validated['decision'] === 'confirmed') {
             $detection = $verification->detection;
-            $missingPerson = $detection->reference;
+            $missingPerson = $detection->missingPerson;
             $camera = $detection->camera;
 
             if ($missingPerson && $camera) {

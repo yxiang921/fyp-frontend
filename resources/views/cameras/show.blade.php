@@ -12,24 +12,19 @@
 @endsection
 
 @section('content')
-@if(session('success'))
-<div class="alert alert-success mb-4">
-    <i class="fa-solid fa-circle-check"></i> {{ session('success') }}
-</div>
-@endif
-
-@if(session('error'))
-<div class="alert alert-danger mb-4">
-    <i class="fa-solid fa-circle-exclamation"></i> {{ session('error') }}
-</div>
-@endif
-
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
     <div>
         <h1 class="text-xl font-semibold text-gray-900">Camera: {{ $camera->name }}</h1>
         <p class="text-sm text-gray-500 mt-1">Camera ID: <code class="font-mono">{{ $camera->camera_id }}</code></p>
     </div>
     <div class="flex gap-2">
+        <form method="POST" action="{{ route('cameras.recognition', $camera) }}">@csrf
+            <input type="hidden" name="action" value="{{ ($recognitionStatus['running'] ?? false) ? 'stop' : 'start' }}">
+            <button class="btn {{ ($recognitionStatus['running'] ?? false) ? 'btn-danger' : 'btn-success' }}" type="submit">
+                <i class="fa-solid {{ ($recognitionStatus['running'] ?? false) ? 'fa-stop' : 'fa-play' }}"></i>
+                {{ ($recognitionStatus['running'] ?? false) ? 'Stop Recognition' : 'Start Recognition' }}
+            </button>
+        </form>
         @if($camera->hasIpAddress())
         <a href="{{ route('cameras.live', $camera) }}" class="btn btn-success">
             <i class="fa-solid fa-play"></i> Live View
@@ -52,7 +47,7 @@
         <div class="card">
             <div class="card-header">
                 <h2 class="text-sm font-semibold text-gray-900">Camera Information</h2>
-                <span class="badge {{ $camera->status->badge() ?? 'badge-gray' }}">{{ $camera->status->label() }}</span>
+                <div class="flex gap-2"><span class="badge {{ $camera->status->badge() ?? 'badge-gray' }}">{{ $camera->status->label() }}</span><span class="badge {{ ($recognitionStatus['running'] ?? false) ? 'badge-green' : 'badge-gray' }}">Recognition: {{ $recognitionStatus['status'] ?? 'service unavailable' }}</span></div>
             </div>
             <div class="card-body">
                 <div class="detail-grid">

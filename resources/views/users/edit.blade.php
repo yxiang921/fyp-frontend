@@ -54,6 +54,13 @@
                             <option value="0" {{ !$user->is_active ? 'selected' : '' }}>Inactive</option>
                         </select>
                     </div>
+                    <div class="form-group md:col-span-2">
+                        <label class="form-label">Patrol areas (required for patrol units)</label>
+                        @php $selectedAreas = old('patrol_area_ids', $user->patrolAreas->pluck('id')->all()); @endphp
+                        <div class="grid grid-cols-2 gap-2">
+                        @foreach($patrolAreas as $area)<label><input type="checkbox" name="patrol_area_ids[]" value="{{ $area->id }}" @checked(in_array($area->id, $selectedAreas))> {{ $area->name }}</label>@endforeach
+                        </div>
+                    </div>
                 </div>
 
                 <div class="flex items-center gap-3 mt-6 pt-5 border-t border-gray-200">

@@ -11,7 +11,7 @@ class NotificationSeeder extends Seeder
     {
         $types = ['alert_new', 'alert_updated', 'verification_requested', 'verification_completed', 'detection_new', 'case_update'];
         $titles = [
-            'alert_new' => ['New High-Priority Alert', 'New Alert Generated', 'Critical Alert Detected', 'Alert: Potential Match Found'],
+            'alert_new' => ['New Alert', 'New Alert Generated', 'Critical Alert Detected', 'Alert: Potential Match Found'],
             'alert_updated' => ['Alert Status Updated', 'Alert Escalated', 'Alert Under Review', 'Alert Assigned'],
             'verification_requested' => ['Verification Request Submitted', 'New Verification Request', 'JPN Verification Required'],
             'verification_completed' => ['Verification Completed', 'Identity Verification Result', 'JPN Confirmation Received'],
@@ -19,8 +19,8 @@ class NotificationSeeder extends Seeder
             'case_update' => ['Case Status Updated', 'Case Reopened', 'Case Information Updated'],
         ];
         $messages = [
-            'alert_new' => ['A new high-priority alert has been generated with similarity score exceeding threshold.', 'Facial recognition system detected a potential match requiring immediate review.'],
-            'alert_updated' => ['The alert has been escalated for priority review by senior officer.', 'Alert status has been changed and reassigned to investigating officer.'],
+            'alert_new' => ['A new alert has been generated with similarity score exceeding threshold.', 'Facial recognition system detected a potential match requiring immediate review.'],
+            'alert_updated' => ['The alert has been escalated for review by senior officer.', 'Alert status has been changed and reassigned to investigating officer.'],
             'verification_requested' => ['A police officer has requested JPN verification for a detection match.', 'New identity verification request pending JPN review.'],
             'verification_completed' => ['JPN has completed the verification review. Result available.', 'Identity verification outcome has been recorded.'],
             'detection_new' => ['A new facial recognition detection has been recorded by the system.', 'New potential match detected by surveillance camera.'],

@@ -70,9 +70,13 @@
 <div class="mb-6">
     <div class="flex items-center gap-3 mb-2">
         <h1 class="text-xl font-semibold text-gray-900">{{ $camera->name }}</h1>
-        <div class="live-badge" style="position: static;">
-            <span class="live-dot"></span> LIVE
+        <div class="live-badge" style="position: static; background: {{ ($recognitionStatus['running'] ?? false) ? 'rgba(220,38,38,.9)' : '#4b5563' }};">
+            <span class="live-dot"></span> {{ ($recognitionStatus['running'] ?? false) ? 'RECOGNITION LIVE' : 'RECOGNITION STOPPED' }}
         </div>
+        <form method="POST" action="{{ route('cameras.recognition', $camera) }}">@csrf
+            <input type="hidden" name="action" value="{{ ($recognitionStatus['running'] ?? false) ? 'stop' : 'start' }}">
+            <button class="btn {{ ($recognitionStatus['running'] ?? false) ? 'btn-danger' : 'btn-success' }}" type="submit"><i class="fa-solid {{ ($recognitionStatus['running'] ?? false) ? 'fa-stop' : 'fa-play' }}"></i> {{ ($recognitionStatus['running'] ?? false) ? 'Stop Recognition' : 'Start Recognition' }}</button>
+        </form>
     </div>
     <p class="text-sm text-gray-500">Camera ID: {{ $camera->camera_id }} &bull; Type: {{ ucfirst($camera->stream_type ?? 'unknown') }} &bull; Location: {{ $camera->location }}</p>
 </div>

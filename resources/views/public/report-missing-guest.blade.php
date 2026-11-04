@@ -70,7 +70,8 @@
 
         <div class="border-t border-gray-200 pt-4">
             <label for="photo" class="form-label">Photo (Optional)</label>
-            <input type="file" id="photo" name="photo" class="form-input @error('photo') border-red-500 @enderror" accept="image/jpeg,image/png,image/jpg">
+            <img id="photo-preview" class="w-32 h-32 object-cover rounded border border-gray-200 mb-3 hidden">
+            <input type="file" id="photo" name="photo" class="form-input @error('photo') border-red-500 @enderror" accept="image/jpeg,image/png,image/jpg" onchange="previewImage(this, 'photo-preview')">
             <p class="text-xs text-gray-400 mt-1">A clear, recent photo helps facial recognition. JPG or PNG, max 5MB.</p>
             @error('photo')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
         </div>

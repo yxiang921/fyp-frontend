@@ -30,6 +30,7 @@
             <div class="detail-item"><span class="detail-label">Requested By</span><span class="detail-value">{{ $verification->requester->name ?? 'N/A' }} {{ $verification->requester->agency ? '(' . $verification->requester->agency . ')' : '' }}</span></div>
             <div class="detail-item"><span class="detail-label">Request Date</span><span class="detail-value">{{ $verification->created_at->format('d M Y, H:i') }}</span></div>
             <div class="detail-item"><span class="detail-label">Subject</span><span class="detail-value font-medium">{{ $verification->detection?->referenceName() ?? 'N/A' }}</span></div>
+            <div class="detail-item"><span class="detail-label">Location</span><span class="detail-value">{{ $verification->detection?->camera?->location ?? 'N/A' }}</span></div>
             @if($verification->reviewed_by)
             <div class="detail-item"><span class="detail-label">Reviewed By</span><span class="detail-value">{{ $verification->reviewer->name ?? 'N/A' }}</span></div>
             <div class="detail-item"><span class="detail-label">Verified At</span><span class="detail-value">{{ $verification->verified_at?->format('d M Y, H:i') }}</span></div>
@@ -43,19 +44,36 @@
             <div class="grid grid-cols-2 gap-4">
                 <div class="text-center">
                     <p class="text-xs font-semibold text-gray-500 uppercase mb-2">Captured Image</p>
-                    <div class="aspect-square bg-gray-100 rounded border border-gray-200 flex items-center justify-center">
-                        @if($verification->detection->captured_image)
-                            @php
-                                $capturedUrl = $verification->detection->captured_image;
-                                if (!str_starts_with($capturedUrl, 'http')) {
+                    @php
+                        $capturedImages = [];
+                        if ($verification->detection->captured_image) {
+                            $rawImages = explode(',', $verification->detection->captured_image);
+                            foreach ($rawImages as $img) {
+                                $img = trim($img);
+                                if ($img === '') continue;
+                                if (!str_starts_with($img, 'http')) {
                                     $flaskBase = config('services.python_api.base_url', 'http://127.0.0.1:5000');
-                                    $capturedUrl = rtrim($flaskBase, '/') . '/outputs/' . ltrim($capturedUrl, '/');
+                                    $img = rtrim($flaskBase, '/') . '/outputs/' . ltrim($img, '/');
                                 }
-                            @endphp
-                        <img src="{{ $capturedUrl }}" class="w-full h-full object-cover rounded" alt="Captured" onerror="this.src='https://ui-avatars.com/api/?name=No+Image&background=1B3A5C&color=fff&size=300'">
-                        @else
-                        <img src="https://ui-avatars.com/api/?name=No+Image&background=1B3A5C&color=fff&size=300" class="w-full h-full object-cover rounded" alt="No Image">
-                        @endif
+                                $capturedImages[] = $img;
+                            }
+                        }
+                    @endphp
+                    <div x-data="{ current: 0, images: {{ json_encode($capturedImages) }} }">
+                        <div class="image-carousel aspect-square bg-gray-100 rounded border border-gray-200">
+                            @if(empty($capturedImages))
+                            <img src="https://ui-avatars.com/api/?name=No+Image&background=1B3A5C&color=fff&size=300" class="w-full h-full object-cover rounded" alt="No Image">
+                            @else
+                            <img :src="images[current]" class="w-full h-full object-cover rounded" alt="Captured" onerror="this.src='https://ui-avatars.com/api/?name=No+Image&background=1B3A5C&color=fff&size=300'">
+                            <button x-show="images.length > 1" @click="current = (current - 1 + images.length) % images.length" class="carousel-btn prev"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+                            <button x-show="images.length > 1" @click="current = (current + 1) % images.length" class="carousel-btn next"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+                            @endif
+                        </div>
+                        <div class="carousel-dots" x-show="images.length > 1">
+                            <template x-for="(img, idx) in images" :key="idx">
+                                <span class="dot" :class="{ active: idx === current }" @click="current = idx"></span>
+                            </template>
+                        </div>
                     </div>
                     <p class="text-xs text-gray-500 mt-2">Camera: {{ $verification->detection->camera->name ?? 'N/A' }}<br>{{ $verification->detection->detected_at?->format('d M Y, H:i:s') }}</p>
                 </div>
@@ -65,8 +83,8 @@
                         @php
                             $refPhoto = null;
                             $refName = $verification->detection->referenceName();
-                            if ($verification->detection->reference && $verification->detection->reference->primaryPhoto) {
-                                $refPhoto = $verification->detection->reference->primaryPhoto->url();
+                            if ($verification->detection->missingPerson && $verification->detection->missingPerson->primaryPhoto) {
+                                $refPhoto = $verification->detection->missingPerson->primaryPhoto->url();
                             }
                         @endphp
                         @if($refPhoto)
@@ -117,7 +135,48 @@
                 <p class="text-xs text-gray-500 mt-1">More information required for verification.</p>
             @endif
         </div></div>
+        {{-- Location Map --}}
+        @if($verification->detection && $verification->detection->camera && $verification->detection->camera->latitude && $verification->detection->camera->longitude)
+        <div class="card">
+            <div class="card-header"><h2 class="text-sm font-semibold text-gray-900"><i class="fa-solid fa-map-pin text-navy mr-1"></i> Detection Location</h2></div>
+            <div class="card-body p-0">
+                <div id="location-map" class="map-container" style="height: 260px;"></div>
+            </div>
+            <div class="card-footer text-xs text-gray-500">
+                <i class="fa-solid fa-video mr-1"></i> {{ $verification->detection->camera->name }} — {{ $verification->detection->camera->location ?? 'N/A' }}
+            </div>
+        </div>
+        @endif
+
         <div class="disclaimer"><i class="fa-solid fa-triangle-exclamation mt-0.5 flex-shrink-0"></i><p>Identity verification must be confirmed against official PDRM records. A similarity score alone does not constitute proof of identity.</p></div>
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var mapEl = document.getElementById('location-map');
+    if (!mapEl) return;
+
+    var lat = {{ $verification->detection?->camera?->latitude ?? 4.2105 }};
+    var lng = {{ $verification->detection?->camera?->longitude ?? 108.9758 }};
+    var camName = @json($verification->detection?->camera?->name ?? 'N/A');
+    var camLocation = @json($verification->detection?->camera?->location ?? 'N/A');
+
+    var map = L.map('location-map').setView([lat, lng], 15);
+    L.tileLayer(@json(config('maps.tile_url')), {
+        attribution: @json(config('maps.attribution')),
+        maxZoom: @json(config('maps.max_zoom')),
+    }).addTo(map);
+
+    var marker = L.marker([lat, lng]).addTo(map);
+    marker.bindPopup(
+        '<strong>' + camName + '</strong><br>' +
+        'Location: ' + camLocation + '<br>' +
+        '<span style="font-size:11px;color:#888;">' + lat.toFixed(4) + ', ' + lng.toFixed(4) + '</span>'
+    ).openPopup();
+});
+</script>
+@endpush

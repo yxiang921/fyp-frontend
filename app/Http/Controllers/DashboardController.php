@@ -44,7 +44,6 @@ class DashboardController extends Controller
             'pendingVerifications' => MissingPerson::where('status', 'pending')->count(),
             'todayAlerts' => Alert::whereDate('created_at', today())->count(),
             'newDetections' => Detection::new()->count(),
-            'highPriorityAlerts' => Alert::new()->whereIn('priority', ['high', 'critical'])->count(),
         ];
 
         $recentDetections = Detection::with('camera')->latest()->take(8)->get();
@@ -60,20 +59,23 @@ class DashboardController extends Controller
 
     public function patrol()
     {
+        $areaAlerts = app(\App\Services\PatrolRoutingService::class)
+            ->restrictAlertsToPatrolAreas(Alert::query(), auth()->user());
         $stats = [
-            'assignedAlerts' => Alert::where('assigned_to', auth()->id())->count(),
-            'newAlerts' => Alert::where('assigned_to', auth()->id())->new()->count(),
-            'resolvedToday' => Alert::where('assigned_to', auth()->id())
+            'assignedAlerts' => (clone $areaAlerts)->count(),
+            'newAlerts' => (clone $areaAlerts)->new()->count(),
+            'resolvedToday' => (clone $areaAlerts)
                 ->whereDate('resolved_at', today())->count(),
         ];
 
-        $assignedAlerts = Alert::with(['camera', 'detection'])
-            ->where('assigned_to', auth()->id())
+        $assignedAlerts = app(\App\Services\PatrolRoutingService::class)
+            ->restrictAlertsToPatrolAreas(Alert::with(['camera.patrolArea', 'detection']), auth()->user())
             ->latest()
             ->take(10)
             ->get();
 
-        return view('dashboard.patrol', compact('stats', 'assignedAlerts'));
+        $patrolAreas = auth()->user()->patrolAreas()->orderBy('name')->get();
+        return view('dashboard.patrol', compact('stats', 'assignedAlerts', 'patrolAreas'));
     }
 
     public function public()

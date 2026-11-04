@@ -7,7 +7,7 @@
 
 @section('content')
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-    <div><h1 class="text-xl font-semibold text-gray-900">Alerts</h1><p class="text-sm text-gray-500 mt-1">Monitor and manage facial recognition alerts.</p></div>
+    <div><h1 class="text-xl font-semibold text-gray-900">Alerts</h1><p class="text-sm text-gray-500 mt-1">Monitor camera detections and confirmed public sightings.</p></div>
 </div>
 
 <div class="filter-bar">
@@ -19,27 +19,20 @@
                 <option value="{{ $status->value }}" {{ request('status') == $status->value ? 'selected' : '' }}>{{ $status->label() }}</option>
             @endforeach
         </select>
-        <select name="priority" class="form-select w-auto">
-            <option value="">All Priorities</option>
-            @foreach($priorities as $priority)
-                <option value="{{ $priority->value }}" {{ request('priority') == $priority->value ? 'selected' : '' }}>{{ $priority->label() }}</option>
-            @endforeach
-        </select>
         <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
     </form>
 </div>
 
 <div class="table-container">
     <table class="data-table">
-        <thead><tr><th>Alert ID</th><th>Subject</th><th>Camera</th><th>Score</th><th>Priority</th><th>Status</th><th>Assigned To</th><th>Date</th><th class="text-right">Actions</th></tr></thead>
+        <thead><tr><th>Alert ID</th><th>Subject</th><th>Camera</th><th>Score</th><th>Status</th><th>Assigned To</th><th>Date</th><th class="text-right">Actions</th></tr></thead>
         <tbody>
             @forelse($alerts as $alert)
             <tr>
                 <td><a href="{{ route('alerts.show', $alert) }}" class="text-navy hover:underline font-mono text-xs">{{ $alert->alert_id }}</a></td>
                 <td class="text-sm font-medium">{{ $alert->referenceName() }}</td>
-                <td class="text-sm">{{ $alert->camera->name ?? 'N/A' }}</td>
-                <td><span class="text-sm {{ $alert->similarity_score >= 80 ? 'text-red-600 font-semibold' : 'text-gray-600' }}">{{ number_format($alert->similarity_score, 1) }}%</span></td>
-                <td><span class="badge {{ $alert->priority->badge() }}">{{ $alert->priority->label() }}</span></td>
+                <td class="text-sm">{{ $alert->camera->name ?? $alert->sighting?->location ?? 'N/A' }}</td>
+                <td><span class="text-sm {{ $alert->similarity_score >= 80 ? 'text-red-600 font-semibold' : 'text-gray-600' }}">{{ $alert->detection ? number_format($alert->similarity_score, 1).'%' : 'Witness confirmed' }}</span></td>
                 <td><span class="badge {{ $alert->status->badge() }}">{{ $alert->status->label() }}</span></td>
                 <td class="text-sm text-gray-500">{{ $alert->assignedTo->name ?? '—' }}</td>
                 <td class="text-gray-500 text-xs">{{ $alert->created_at->format('d M Y') }}</td>
@@ -50,7 +43,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="9" class="text-center text-gray-400 py-8">
+                <td colspan="8" class="text-center text-gray-400 py-8">
                     <i class="fa-solid fa-bell text-2xl mb-2 block"></i>
                     No alerts recorded yet.
                 </td>

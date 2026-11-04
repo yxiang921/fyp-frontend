@@ -4,12 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="FindSight — Monitoring and Alert System">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'FindSight')</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>[x-cloak] { display: none !important; }</style>
     @stack('styles')
 </head>
@@ -43,13 +45,37 @@
                         <span>Dashboard</span>
                     </a>
 
+                    {{-- Notifications (all roles) --}}
+                    <a href="{{ route('notifications.index') }}" class="sidebar-link {{ request()->routeIs('notifications*') ? 'active' : '' }}">
+                        <i class="fa-regular fa-bell"></i>
+                        <span>Notifications</span>
+                        @php $sidebarUnread = auth()->user()->unreadNotifications()->count(); @endphp
+                        @if($sidebarUnread > 0)
+                        <span class="ml-auto badge badge-red text-[10px]">{{ $sidebarUnread > 9 ? '9+' : $sidebarUnread }}</span>
+                        @endif
+                    </a>
+
                     {{-- Super Admin & PDRM Officer: Case Management --}}
+                    @if($role->value === 'super_admin')
+                    <a href="{{ route('patrol-areas.index') }}" class="sidebar-link {{ request()->routeIs('patrol-areas.*') ? 'active' : '' }}">
+                        <i class="fa-solid fa-map-location-dot"></i><span>Patrol Areas</span>
+                    </a>
+                    @endif
                     @if(in_array($role->value, ['super_admin', 'pdrm_officer']))
                     <div class="sidebar-section">Case Management</div>
 
                     <a href="{{ route('missing-persons.index') }}" class="sidebar-link {{ request()->routeIs('missing-persons*') && request('status') != 'pending' ? 'active' : '' }}">
                         <i class="fa-solid fa-magnifying-glass"></i>
                         <span>Missing Persons</span>
+                    </a>
+
+                    @php $newSightingsCount = \App\Models\Sighting::where('status', 'new')->count(); @endphp
+                    <a href="{{ route('sightings.index') }}" class="sidebar-link {{ request()->routeIs('sightings*') ? 'active' : '' }}">
+                        <i class="fa-solid fa-location-dot"></i>
+                        <span>Public Sightings</span>
+                        @if($newSightingsCount > 0)
+                        <span class="ml-auto badge badge-blue text-[10px]">{{ $newSightingsCount > 99 ? '99+' : $newSightingsCount }}</span>
+                        @endif
                     </a>
                     @endif
 
@@ -84,9 +110,9 @@
                         <span>Cameras</span>
                     </a>
 
-                    <a href="{{ route('email-logs.index') }}" class="sidebar-link {{ request()->routeIs('email-logs*') ? 'active' : '' }}">
-                        <i class="fa-solid fa-envelope"></i>
-                        <span>Email Logs</span>
+                    <a href="{{ route('reports.analysis') }}" class="sidebar-link {{ request()->routeIs('reports*') ? 'active' : '' }}">
+                        <i class="fa-solid fa-chart-bar"></i>
+                        <span>Report & Analysis</span>
                     </a>
                     @endif
 
@@ -133,16 +159,28 @@
                         <i class="fa-solid fa-users-gear"></i>
                         <span>User Management</span>
                     </a>
+                    @endif
 
+                    {{-- Logs --}}
+                    @if(in_array($role->value, ['super_admin', 'pdrm_officer']))
+                    <div class="sidebar-section">Logs</div>
+
+                    <a href="{{ route('email-logs.index') }}" class="sidebar-link {{ request()->routeIs('email-logs*') ? 'active' : '' }}">
+                        <i class="fa-solid fa-envelope"></i>
+                        <span>Email Logs</span>
+                    </a>
+
+                    @if($role->value === 'super_admin')
                     <a href="{{ route('audit-logs.index') }}" class="sidebar-link {{ request()->routeIs('audit-logs*') ? 'active' : '' }}">
                         <i class="fa-solid fa-clipboard-list"></i>
                         <span>Audit Logs</span>
                     </a>
                     @endif
+                    @endif
                 @endauth
             </nav>
 
-            <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-white/10">
+            <div class="sidebar-footer">
                 <p class="text-[10px] text-gray-500 text-center leading-relaxed">
                     Facial recognition results are not final identification.<br>
                     Identity confirmation requires human review.
@@ -171,9 +209,11 @@
                         <i class="fa-regular fa-bell text-lg"></i>
                         @php $unreadCount = auth()->user()->unreadNotifications()->count(); @endphp
                         @if($unreadCount > 0)
-                        <span class="absolute -top-0.5 -right-0.5 bg-red-600 text-white text-[10px] font-bold w-4.5 h-4.5 rounded-full flex items-center justify-center">
+                        <span id="header-notif-badge" class="absolute -top-0.5 -right-0.5 bg-red-600 text-white text-[10px] font-bold w-4.5 h-4.5 rounded-full flex items-center justify-center">
                             {{ $unreadCount > 9 ? '9+' : $unreadCount }}
                         </span>
+                        @else
+                        <span id="header-notif-badge" class="absolute -top-0.5 -right-0.5 bg-red-600 text-white text-[10px] font-bold w-4.5 h-4.5 rounded-full items-center justify-center" style="display:none"></span>
                         @endif
                     </button>
                     <div x-show="open" x-cloak class="notif-dropdown">
@@ -234,7 +274,7 @@
         </header>
 
         <!-- Main Content -->
-        <main class="main-content">
+        <main class="main-content lg:pl-64">
             <div class="page-content">
                 {{-- Flash Messages --}}
                 @if(session('success'))

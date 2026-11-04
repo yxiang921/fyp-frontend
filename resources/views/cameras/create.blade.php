@@ -39,6 +39,14 @@
                     <input type="text" id="location" name="location" class="form-input @error('location') border-red-500 @enderror" value="{{ old('location') }}" placeholder="Address or area" required>
                     @error('location')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
+                <div class="form-group">
+                    <label for="patrol_area_id" class="form-label">Patrol Area <span class="text-red-500">*</span></label>
+                    <select id="patrol_area_id" name="patrol_area_id" class="form-select" required>
+                        <option value="">Select patrol area</option>
+                        @foreach($patrolAreas as $area)<option value="{{ $area->id }}" @selected(old('patrol_area_id') == $area->id)>{{ $area->name }}</option>@endforeach
+                    </select>
+                    @error('patrol_area_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                </div>
             </div>
 
             {{-- IP Camera Configuration --}}

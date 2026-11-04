@@ -67,6 +67,7 @@ class MissingPersonController extends Controller
     public function store(StoreMissingPersonRequest $request)
     {
         $data = $request->validated();
+        $data['duplicate_review'] = app(\App\Services\DuplicateCaseService::class)->guard($request, $data);
 
         // Auto-generate case number if not provided
         if (empty($data['case_number'])) {
@@ -96,11 +97,18 @@ class MissingPersonController extends Controller
             'recorded_by' => auth()->id(),
         ]);
 
-        // Handle photo upload
+        // Handle photo upload to Cloudinary
         if ($request->hasFile('photo')) {
-            $path = $request->file('photo')->store('missing-persons/' . $missingPerson->id, 'public');
+            $result = cloudinary()->uploadApi()->upload($request->file('photo')->getRealPath(), [
+                'folder' => 'findsight/missing-persons/' . $missingPerson->id,
+                'transformation' => [
+                    'width' => 800,
+                    'height' => 800,
+                    'crop' => 'limit',
+                ],
+            ]);
             $missingPerson->photos()->create([
-                'path' => $path,
+                'path' => $result['secure_url'],
                 'type' => 'front',
                 'is_primary' => true,
                 'uploaded_by' => auth()->id(),
@@ -117,6 +125,7 @@ class MissingPersonController extends Controller
 
     public function show(MissingPerson $missingPerson)
     {
+        \App\Services\Privacy::log('case_view', 'case', $missingPerson->id);
         $missingPerson->load(['creator', 'photos', 'timeline.recordedBy', 'detections.camera', 'alerts']);
 
         $detectionStats = [
@@ -134,7 +143,23 @@ class MissingPersonController extends Controller
             ->filter()
             ->values();
 
-        return view('missing-persons.show', compact('missingPerson', 'detectionStats', 'detectedCameras'));
+        // Map data: unique camera locations where person was detected
+        $mapLocations = $missingPerson->detections()
+            ->with('camera')
+            ->get()
+            ->filter(fn($d) => $d->camera && $d->camera->latitude && $d->camera->longitude)
+            ->map(fn($d) => [
+                'name' => $d->camera->name,
+                'location' => $d->camera->location,
+                'latitude' => (float) $d->camera->latitude,
+                'longitude' => (float) $d->camera->longitude,
+                'detected_at' => $d->detected_at?->format('d M Y H:i'),
+                'score' => (float) $d->similarity_score,
+            ])
+            ->unique(fn($loc) => $loc['latitude'] . ',' . $loc['longitude'])
+            ->values();
+
+        return view('missing-persons.show', compact('missingPerson', 'detectionStats', 'detectedCameras', 'mapLocations'));
     }
 
     public function edit(MissingPerson $missingPerson)
@@ -160,13 +185,20 @@ class MissingPersonController extends Controller
             ]);
         }
 
-        // Handle photo upload
+        // Handle photo upload to Cloudinary
         if ($request->hasFile('photo')) {
-            $path = $request->file('photo')->store('missing-persons/' . $missingPerson->id, 'public');
+            $result = cloudinary()->uploadApi()->upload($request->file('photo')->getRealPath(), [
+                'folder' => 'findsight/missing-persons/' . $missingPerson->id,
+                'transformation' => [
+                    'width' => 800,
+                    'height' => 800,
+                    'crop' => 'limit',
+                ],
+            ]);
             // Set existing photos to non-primary
             $missingPerson->photos()->update(['is_primary' => false]);
             $missingPerson->photos()->create([
-                'path' => $path,
+                'path' => $result['secure_url'],
                 'type' => 'front',
                 'is_primary' => true,
                 'uploaded_by' => auth()->id(),
@@ -187,9 +219,14 @@ class MissingPersonController extends Controller
 
         $caseNumber = $missingPerson->case_number;
 
-        // Delete photos from storage
+        // Remove the corresponding face profile before deleting the Laravel case.
+        PythonApiService::deleteMissingPerson($caseNumber);
+
+        // Delete photos from storage (skip Cloudinary URLs — they're remote)
         foreach ($missingPerson->photos as $photo) {
-            Storage::disk('public')->delete($photo->path);
+            if (!str_starts_with($photo->path, 'https://')) {
+                Storage::disk('public')->delete($photo->path);
+            }
         }
 
         $missingPerson->delete();
@@ -211,6 +248,11 @@ class MissingPersonController extends Controller
         }
 
         $missingPerson->update(['status' => MissingPersonStatus::Active]);
+
+        $missingPerson->load('photos');
+        if ($missingPerson->photos->isNotEmpty()) {
+            PythonApiService::syncMissingPerson($missingPerson);
+        }
 
         MissingPersonTimeline::create([
             'missing_person_id' => $missingPerson->id,

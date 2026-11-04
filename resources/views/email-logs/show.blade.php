@@ -135,10 +135,7 @@
                     <span class="detail-label">Status</span>
                     <span class="detail-value"><span class="badge {{ $emailLog->alert->status->badge() }}">{{ $emailLog->alert->status->label() }}</span></span>
                 </div>
-                <div class="detail-item">
-                    <span class="detail-label">Priority</span>
-                    <span class="detail-value"><span class="badge {{ $emailLog->alert->priority->badge() }}">{{ $emailLog->alert->priority->label() }}</span></span>
-                </div>
+
                 <a href="{{ route('alerts.show', $emailLog->alert) }}" class="btn btn-primary w-full mt-2">
                     <i class="fa-solid fa-bell"></i> View Alert
                 </a>

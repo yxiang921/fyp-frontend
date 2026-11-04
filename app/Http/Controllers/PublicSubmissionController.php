@@ -14,18 +14,17 @@ class PublicSubmissionController extends Controller
 {
     public function create()
     {
-        if (auth()->check()) {
-            return view('public.report-missing');
-        }
-        return view('public.report-missing-guest');
+        return view('public.report-form');
     }
 
     public function store(PublicMissingPersonRequest $request)
     {
         $data = $request->validated();
+        $data['duplicate_review'] = app(\App\Services\DuplicateCaseService::class)->guard($request, $data);
+        $data['consented_at'] = now();
 
         // Remove honeypot field from data
-        unset($data['website']);
+        unset($data['website'], $data['consent'], $data['duplicate_acknowledged']);
 
         // Auto-generate case number
         $latest = MissingPerson::where('case_number', 'like', 'MP-' . date('Y') . '-%')
@@ -55,11 +54,18 @@ class PublicSubmissionController extends Controller
             'recorded_by' => auth()->check() ? auth()->id() : null,
         ]);
 
-        // Handle photo upload
+        // Handle photo upload to Cloudinary
         if ($request->hasFile('photo')) {
-            $path = $request->file('photo')->store('missing-persons/' . $missingPerson->id, 'public');
+            $result = cloudinary()->uploadApi()->upload($request->file('photo')->getRealPath(), [
+                'folder' => 'findsight/missing-persons/' . $missingPerson->id,
+                'transformation' => [
+                    'width' => 800,
+                    'height' => 800,
+                    'crop' => 'limit',
+                ],
+            ]);
             $missingPerson->photos()->create([
-                'path' => $path,
+                'path' => $result['secure_url'],
                 'type' => 'front',
                 'is_primary' => true,
                 'uploaded_by' => auth()->check() ? auth()->id() : null,

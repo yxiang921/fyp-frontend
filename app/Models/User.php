@@ -5,12 +5,14 @@ namespace App\Models;
 use App\Enums\UserRole;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
         'name',
@@ -69,6 +71,16 @@ class User extends Authenticatable
         return $this->hasMany(Notification::class);
     }
 
+    public function pushTokens(): HasMany
+    {
+        return $this->hasMany(PushToken::class);
+    }
+
+    public function patrolAreas(): BelongsToMany
+    {
+        return $this->belongsToMany(PatrolArea::class);
+    }
+
     public function unreadNotifications(): HasMany
     {
         return $this->notifications()->whereNull('read_at');
@@ -114,6 +126,11 @@ class User extends Authenticatable
     public function avatarUrl(): string
     {
         if ($this->avatar) {
+            // Cloudinary URL (starts with https://)
+            if (str_starts_with($this->avatar, 'https://')) {
+                return $this->avatar;
+            }
+            // Local storage path
             return asset('storage/' . $this->avatar);
         }
         return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&background=1B3A5C&color=fff&size=128';

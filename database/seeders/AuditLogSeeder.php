@@ -9,12 +9,11 @@ class AuditLogSeeder extends Seeder
 {
     public function run(): void
     {
-        $modules = ['Missing Persons', 'Persons of Interest', 'Detections', 'Alerts', 'Verifications', 'Cameras', 'Users', 'Authentication', 'System'];
+        $modules = ['Missing Persons', 'Detections', 'Alerts', 'Verifications', 'Cameras', 'Users', 'Authentication', 'System'];
         $actions = ['Create', 'Update', 'Delete', 'View', 'Login', 'Logout', 'Export', 'Assign'];
 
         $descriptions = [
             'Missing Persons' => ['Created new missing person case', 'Updated case status from Active to Found', 'Deleted case record', 'Viewed case details'],
-            'Persons of Interest' => ['Created new POI record', 'Updated risk level', 'Changed POI status', 'Viewed POI profile'],
             'Detections' => ['Auto-generated detection', 'Reviewed detection record', 'Confirmed facial match', 'Marked as false positive'],
             'Alerts' => ['Alert auto-generated from detection', 'Changed alert status', 'Assigned alert to officer', 'Escalated alert to critical'],
             'Verifications' => ['Submitted verification request', 'Reviewed verification request', 'Confirmed identity match', 'Rejected identity match'],

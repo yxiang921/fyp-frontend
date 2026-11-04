@@ -2,25 +2,22 @@
 
 namespace App\Models;
 
-use App\Enums\AlertPriority;
 use App\Enums\AlertStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Alert extends Model
 {
     protected $fillable = [
         'alert_id',
         'detection_id',
-        'alert_type',
-        'reference_type',
-        'reference_id',
+        'sighting_id',
+        'missing_person_id',
         'similarity_score',
         'camera_id',
+        'patrol_area_id',
         'status',
-        'priority',
         'assigned_to',
         'description',
         'resolved_at',
@@ -31,7 +28,6 @@ class Alert extends Model
         return [
             'similarity_score' => 'decimal:2',
             'status' => AlertStatus::class,
-            'priority' => AlertPriority::class,
             'resolved_at' => 'datetime',
         ];
     }
@@ -41,14 +37,24 @@ class Alert extends Model
         return $this->belongsTo(Detection::class);
     }
 
-    public function reference(): MorphTo
+    public function sighting(): BelongsTo
     {
-        return $this->morphTo();
+        return $this->belongsTo(Sighting::class);
+    }
+
+    public function missingPerson(): BelongsTo
+    {
+        return $this->belongsTo(MissingPerson::class);
     }
 
     public function camera(): BelongsTo
     {
         return $this->belongsTo(Camera::class);
+    }
+
+    public function patrolArea(): BelongsTo
+    {
+        return $this->belongsTo(PatrolArea::class);
     }
 
     public function assignedTo(): BelongsTo
@@ -77,16 +83,6 @@ class Alert extends Model
         return $query->where('status', $status);
     }
 
-    public function scopeByPriority($query, AlertPriority $priority)
-    {
-        return $query->where('priority', $priority);
-    }
-
-    public function scopeByType($query, string $type)
-    {
-        return $query->where('alert_type', $type);
-    }
-
     public function scopeAssignedTo($query, int $userId)
     {
         return $query->where('assigned_to', $userId);
@@ -103,11 +99,7 @@ class Alert extends Model
     // Helpers
     public function referenceName(): string
     {
-        return $this->reference?->full_name ?? 'N/A';
+        return $this->missingPerson?->full_name ?? 'N/A';
     }
 
-    public function isHighPriority(): bool
-    {
-        return in_array($this->priority, [AlertPriority::High, AlertPriority::Critical]);
-    }
 }

@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use App\Enums\NotificationType;
+use App\Jobs\SendExpoNotification;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Log;
 
 class Notification extends Model
 {
@@ -24,6 +26,25 @@ class Notification extends Model
             'data' => 'array',
             'read_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Fire a mobile push whenever a notification is created.
+     */
+    protected static function booted(): void
+    {
+        static::created(function (Notification $notification) {
+            try {
+                SendExpoNotification::dispatch(
+                    $notification->user_id,
+                    $notification->title,
+                    $notification->message,
+                    is_array($notification->data) ? $notification->data : [],
+                );
+            } catch (\Throwable $e) {
+                Log::warning('Notification push hook failed: ' . $e->getMessage());
+            }
+        });
     }
 
     public function user(): BelongsTo

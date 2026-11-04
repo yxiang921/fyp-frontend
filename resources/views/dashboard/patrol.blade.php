@@ -12,7 +12,7 @@
 @section('content')
 <div class="mb-6">
     <h1 class="text-xl font-semibold text-gray-900">Patrol Unit Dashboard</h1>
-    <p class="text-sm text-gray-500 mt-1">Assigned alerts and field action items.</p>
+    <p class="text-sm text-gray-500 mt-1">Patrol areas: {{ $patrolAreas->pluck('name')->join(', ') ?: 'No area assigned — contact an administrator.' }}</p>
 </div>
 
 {{-- Stat Cards --}}
@@ -53,7 +53,6 @@
                     <th>Subject</th>
                     <th>Location</th>
                     <th>Similarity</th>
-                    <th>Priority</th>
                     <th>Status</th>
                     <th>Date</th>
                     <th>Action</th>
@@ -74,7 +73,6 @@
                             {{ number_format($alert->similarity_score, 1) }}%
                         </span>
                     </td>
-                    <td><span class="badge {{ $alert->priority->badge() }}">{{ $alert->priority->label() }}</span></td>
                     <td><span class="badge {{ $alert->status->badge() }}">{{ $alert->status->label() }}</span></td>
                     <td class="text-xs text-gray-500">{{ $alert->created_at->format('d M Y') }}</td>
                     <td>
@@ -85,7 +83,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="8" class="text-center text-gray-400 py-8">
+                    <td colspan="7" class="text-center text-gray-400 py-8">
                         <i class="fa-solid fa-check-circle text-2xl mb-2 block text-green-400"></i>
                         No assigned alerts. All clear.
                     </td>

@@ -72,10 +72,33 @@
                     </div>
                 </div>
 
+                @include('missing-persons._identifying-fields', ['missingPerson' => $missingPerson])
+
                 <div class="form-group">
-                    <label for="last_seen_location" class="form-label">Last Seen Location <span class="text-red-500">*</span></label>
+                    <div class="flex items-center justify-between gap-3">
+                        <label for="last_seen_location" class="form-label mb-0">Last Seen Location <span class="text-red-500">*</span></label>
+                        <button type="button" class="btn btn-secondary btn-sm shrink-0" data-location-search-button onclick="findCoordinates(this)">
+                            <i class="fa-solid fa-location-crosshairs"></i> Search coordinates
+                        </button>
+                    </div>
                     <input type="text" id="last_seen_location" name="last_seen_location" class="form-input @error('last_seen_location') border-red-500 @enderror" value="{{ old('last_seen_location', $missingPerson->last_seen_location) }}" required>
+                    <p data-location-search-status class="text-xs text-gray-400 mt-1" role="status">Search again if you want to update the saved coordinates.</p>
                     @error('last_seen_location')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label for="last_seen_latitude" class="form-label">Last Seen Latitude</label>
+                        <input type="text" id="last_seen_latitude" name="last_seen_latitude" class="form-input @error('last_seen_latitude') border-red-500 @enderror" placeholder="e.g. 3.1390" value="{{ old('last_seen_latitude', $missingPerson->last_seen_latitude) }}">
+                        <p class="text-xs text-gray-400 mt-1">Decimal degrees (e.g. 3.1390 for KL)</p>
+                        @error('last_seen_latitude')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="form-group">
+                        <label for="last_seen_longitude" class="form-label">Last Seen Longitude</label>
+                        <input type="text" id="last_seen_longitude" name="last_seen_longitude" class="form-input @error('last_seen_longitude') border-red-500 @enderror" placeholder="e.g. 101.6869" value="{{ old('last_seen_longitude', $missingPerson->last_seen_longitude) }}">
+                        <p class="text-xs text-gray-400 mt-1">Decimal degrees (e.g. 101.6869 for KL)</p>
+                        @error('last_seen_longitude')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -92,10 +115,11 @@
                     @if($missingPerson->primaryPhoto)
                     <div class="mb-3">
                         <p class="text-xs text-gray-500 mb-1">Current photo:</p>
-                        <img src="{{ $missingPerson->primaryPhoto->url() }}" alt="Current photo" class="w-24 h-24 object-cover rounded border">
+                        <img src="{{ $missingPerson->primaryPhoto->url() }}" alt="Current photo" id="current-photo" class="w-24 h-24 object-cover rounded border">
                     </div>
                     @endif
-                    <input type="file" id="photo" name="photo" class="form-input @error('photo') border-red-500 @enderror" accept="image/jpeg,image/png,image/jpg">
+                    <img id="photo-preview" class="w-32 h-32 object-cover rounded border border-gray-200 mb-3 hidden">
+                    <input type="file" id="photo" name="photo" class="form-input @error('photo') border-red-500 @enderror" accept="image/jpeg,image/png,image/jpg" onchange="previewImage(this, 'photo-preview')">
                     <p class="text-xs text-gray-400 mt-1">Leave empty to keep current photo. Supported: JPG, PNG. Max 5MB.</p>
                     @error('photo')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>

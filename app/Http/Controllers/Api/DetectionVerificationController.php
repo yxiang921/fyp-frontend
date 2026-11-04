@@ -26,7 +26,8 @@ class DetectionVerificationController extends Controller
      *   - camera_id: string (e.g. "CAM-001")
      *   - case_number: string (e.g. "MP-2026-0001")
      *   - similarity_score: float (0-1 scale, threshold 0.25)
-     *   - captured_image_url: string (Flask-generated image URL)
+     *   - captured_image_url: string (first Flask-generated image URL)
+     *   - captured_image_urls: optional array of up to 8 burst-frame URLs
      *
      * Returns JSON.
      */
@@ -38,6 +39,8 @@ class DetectionVerificationController extends Controller
             'case_number' => ['required', 'string', 'max:50'],
             'similarity_score' => ['required', 'numeric', 'min:0', 'max:1'],
             'captured_image_url' => ['required', 'string', 'max:1000'],
+            'captured_image_urls' => ['nullable', 'array', 'max:8'],
+            'captured_image_urls.*' => ['required', 'string', 'max:1000', 'distinct'],
         ]);
 
         // --- Lookup camera ---
@@ -65,17 +68,21 @@ class DetectionVerificationController extends Controller
         $detectionId = $this->generateId('DET', Detection::class, 'detection_id');
 
         // --- Captured image: strip Flask base URL prefix, store relative path ---
-        $capturedImageUrl = $validated['captured_image_url'];
+        $capturedImageUrls = $validated['captured_image_urls'] ?? [$validated['captured_image_url']];
+        if (!in_array($validated['captured_image_url'], $capturedImageUrls, true)) {
+            array_unshift($capturedImageUrls, $validated['captured_image_url']);
+        }
         $flaskBase = config('services.python_api.base_url', 'http://127.0.0.1:5000');
-        $capturedImage = str_replace(rtrim($flaskBase, '/') . '/outputs/', '', $capturedImageUrl);
+        $capturedImages = collect($capturedImageUrls)->take(8)->map(
+            fn (string $url) => str_replace(rtrim($flaskBase, '/') . '/outputs/', '', $url)
+        )->implode(',');
 
         // --- Create Detection ---
         $detection = Detection::create([
             'detection_id' => $detectionId,
             'camera_id' => $camera->id,
-            'captured_image' => $capturedImage,
-            'reference_type' => MissingPerson::class,
-            'reference_id' => $missingPerson->id,
+            'captured_image' => $capturedImages,
+            'missing_person_id' => $missingPerson->id,
             'similarity_score' => $similarityScore,
             'status' => DetectionStatus::New,
             'detected_at' => now(),
@@ -118,7 +125,6 @@ class DetectionVerificationController extends Controller
             'verification_id' => $requestId,
             'alert_id' => $alert->alert_id,
             'similarity_score' => $similarityScore,
-            'priority' => $alert->priority->value,
             'message' => 'Detection verified, alert created, notifications sent.',
         ], 201);
     }

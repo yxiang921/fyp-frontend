@@ -38,14 +38,13 @@
 
 <div class="table-container">
     <table class="data-table">
-        <thead><tr><th>Detection ID</th><th>Camera</th><th>Reference</th><th>Type</th><th>Score</th><th>Status</th><th>Date/Time</th><th class="text-right">Actions</th></tr></thead>
+        <thead><tr><th>Detection ID</th><th>Camera</th><th>Missing Person</th><th>Score</th><th>Status</th><th>Date/Time</th><th class="text-right">Actions</th></tr></thead>
         <tbody>
             @forelse($detections as $detection)
             <tr>
                 <td><a href="{{ route('detections.show', $detection) }}" class="text-navy hover:underline font-mono text-xs">{{ $detection->detection_id }}</a></td>
                 <td><div class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full {{ $detection->camera?->status?->value === 'online' ? 'bg-green-500' : 'bg-gray-400' }}"></span>{{ $detection->camera->name ?? 'N/A' }}</div></td>
                 <td class="text-sm">{{ $detection->referenceName() }}</td>
-                <td><span class="badge badge-blue">{{ str_replace('_', ' ', ucfirst($detection->reference_type ?? 'Unknown')) }}</span></td>
                 <td><span class="text-sm {{ $detection->isHighConfidence() ? 'text-red-600 font-semibold' : 'text-gray-600' }}">{{ number_format($detection->similarity_score, 1) }}%</span></td>
                 <td><span class="badge {{ $detection->status->badge() }}">{{ $detection->status->label() }}</span></td>
                 <td class="text-gray-500 text-xs">{{ $detection->detected_at?->format('d M Y H:i') }}</td>
@@ -53,7 +52,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="8" class="text-center text-gray-400 py-8">
+                <td colspan="7" class="text-center text-gray-400 py-8">
                     <i class="fa-solid fa-camera-retro text-2xl mb-2 block"></i>
                     No detections recorded yet.
                 </td>

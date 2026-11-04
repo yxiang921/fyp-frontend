@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Enums\AlertPriority;
 use App\Enums\AlertStatus;
 use App\Enums\NotificationType;
 use App\Mail\NewAlertNotification;
@@ -47,13 +46,23 @@ class PythonApiService
             // Attach photo if the missing person has a primary photo
             $primaryPhoto = $missingPerson->primaryPhoto;
             if ($primaryPhoto) {
-                $photoPath = storage_path('app/public/' . $primaryPhoto->path);
-                if (file_exists($photoPath)) {
+                // Cloudinary URL — fetch the file content
+                if (str_starts_with($primaryPhoto->path, 'https://')) {
                     $httpRequest->attach(
                         'photo',
-                        file_get_contents($photoPath),
-                        basename($primaryPhoto->path)
+                        file_get_contents($primaryPhoto->path),
+                        basename(parse_url($primaryPhoto->path, PHP_URL_PATH))
                     );
+                } else {
+                    // Legacy local storage
+                    $photoPath = storage_path('app/public/' . $primaryPhoto->path);
+                    if (file_exists($photoPath)) {
+                        $httpRequest->attach(
+                            'photo',
+                            file_get_contents($photoPath),
+                            basename($primaryPhoto->path)
+                        );
+                    }
                 }
             }
 
@@ -73,6 +82,34 @@ class PythonApiService
     }
 
     /**
+     * Remove a deleted Laravel case from Python's face-recognition database.
+     */
+    public static function deleteMissingPerson(string $caseNumber): void
+    {
+        $baseUrl = config('services.python_api.base_url');
+        $apiKey = config('services.python_api.api_key');
+
+        if (empty($apiKey)) {
+            Log::warning("PythonApiService: PYTHON_API_KEY not set. Skipping delete sync for case {$caseNumber}");
+            return;
+        }
+
+        try {
+            $response = Http::withHeaders([
+                'X-API-Key' => $apiKey,
+            ])->delete($baseUrl . '/api/missing-persons/' . rawurlencode($caseNumber));
+
+            if ($response->successful()) {
+                Log::info("PythonApiService: Deleted face profile for case {$caseNumber}");
+            } else {
+                Log::warning("PythonApiService: Failed to delete face profile for case {$caseNumber}. Status: {$response->status()}. Body: {$response->body()}");
+            }
+        } catch (\Exception $e) {
+            Log::error("PythonApiService: Exception deleting face profile for case {$caseNumber}: {$e->getMessage()}");
+        }
+    }
+
+    /**
      * Create an Alert + timeline + notifications + email patrol units.
      *
      * Shared between the API controller (auto-detection) and the
@@ -88,14 +125,6 @@ class PythonApiService
         string $triggeredBy = 'system',
         ?int $performedBy = null,
     ): Alert {
-        // --- Determine priority from score ---
-        $priority = match (true) {
-            $similarityScore >= 90 => AlertPriority::Critical,
-            $similarityScore >= 70 => AlertPriority::High,
-            $similarityScore >= 50 => AlertPriority::Medium,
-            default => AlertPriority::Low,
-        };
-
         // --- Generate alert ID ---
         $year = date('Y');
         $latest = Alert::where('alert_id', 'like', "ALT-{$year}-%")
@@ -109,20 +138,19 @@ class PythonApiService
         }
 
         // --- Create Alert ---
+        $patrolArea = app(PatrolRoutingService::class)->areaForCamera($camera);
         $alert = Alert::create([
             'alert_id' => $alertId,
             'detection_id' => $detection->id,
-            'alert_type' => 'missing_person',
-            'reference_type' => MissingPerson::class,
-            'reference_id' => $missingPerson->id,
+            'missing_person_id' => $missingPerson->id,
             'similarity_score' => $similarityScore,
             'camera_id' => $camera->id,
+            'patrol_area_id' => $patrolArea?->id,
             'status' => AlertStatus::New,
-            'priority' => $priority,
             'description' => "Potential match detected for {$missingPerson->full_name} (Case: {$missingPerson->case_number}) at {$camera->name} ({$camera->location}). Similarity score: {$similarityScore}%.",
         ]);
 
-        Log::info("Alert {$alertId} created. Priority: {$priority->value}");
+        Log::info("Alert {$alertId} created. Score: {$similarityScore}%");
 
         // --- Alert timeline entry ---
         AlertTimeline::create([
@@ -139,7 +167,7 @@ class PythonApiService
                 'user_id' => $officer->id,
                 'type' => NotificationType::AlertNew,
                 'title' => "New Alert: {$alertId}",
-                'message' => "Potential match for {$missingPerson->full_name} at {$camera->name}. Score: {$similarityScore}%. Priority: {$priority->label()}.",
+                'message' => "Potential match for {$missingPerson->full_name} at {$camera->name}. Score: {$similarityScore}%.",
                 'data' => [
                     'alert_id' => $alert->id,
                     'detection_id' => $detection->id,
@@ -147,12 +175,26 @@ class PythonApiService
             ]);
         }
 
-        // --- Email patrol unit users ---
-        $patrolUsers = User::where('role', 'patrol_unit')->where('is_active', true)->get();
+        // --- Notify only patrol units responsible for this camera's area ---
+        $routing = app(PatrolRoutingService::class);
+        $patrolArea = $patrolArea ?? $routing->areaForCamera($camera);
+        $patrolUsers = $routing->recipientsForCamera($camera);
         $mailableClass = NewAlertNotification::class;
         $subject = "FindSight Alert: Potential Match — {$missingPerson->case_number}";
 
         foreach ($patrolUsers as $patrolUser) {
+            Notification::create([
+                'user_id' => $patrolUser->id,
+                'type' => NotificationType::AlertNew,
+                'title' => "Area Alert: {$alertId}",
+                'message' => "Potential match for {$missingPerson->full_name} at {$camera->name} in {$patrolArea->name}. Score: {$similarityScore}%.",
+                'data' => [
+                    'alert_id' => $alert->id,
+                    'detection_id' => $detection->id,
+                    'patrol_area_id' => $patrolArea->id,
+                    'patrol_area' => $patrolArea->name,
+                ],
+            ]);
             try {
                 Mail::to($patrolUser->email)->send(
                     new NewAlertNotification($alert, $detection, $missingPerson, $camera)
@@ -184,6 +226,10 @@ class PythonApiService
                     'triggered_by' => $performedBy ?? $missingPerson->created_by,
                 ]);
             }
+        }
+
+        if ($patrolUsers->isEmpty()) {
+            Log::warning("Alert {$alertId} has no active patrol recipient for camera {$camera->camera_id}.");
         }
 
         return $alert;

@@ -10,7 +10,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             UserSeeder::class,
-            SystemSettingSeeder::class,
+            PatrolAreaSeeder::class,
             CameraSeeder::class,
             MissingPersonSeeder::class,
             DetectionSeeder::class,
@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             VerificationRequestSeeder::class,
             NotificationSeeder::class,
             AuditLogSeeder::class,
+            DemoAccountSeeder::class,
         ]);
     }
 }

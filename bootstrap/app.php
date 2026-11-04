@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\ApiKeyMiddleware;
+use App\Http\Middleware\ApiRoleMiddleware;
 use App\Http\Middleware\RoleMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -14,12 +15,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(append: [\App\Http\Middleware\ReportLocale::class]);
+        $middleware->api(append: [\App\Http\Middleware\ReportLocale::class]);
         $middleware->alias([
             'role' => RoleMiddleware::class,
             'api.key' => ApiKeyMiddleware::class,
-        ]);
-        $middleware->api(prepend: [
-            'api.key',
+            'api.role' => ApiRoleMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
